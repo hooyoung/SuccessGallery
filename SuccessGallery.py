@@ -3,12 +3,11 @@
 # A440 = key 49
 # middle C = key 40
 
-import mysynth
-
 import sys, pygame
-import random
 import os
 import glob
+from numpy import *
+import random
 
 bag = {}
 def get(fn):
@@ -58,7 +57,11 @@ wavs = {}
 
 def mywav(note):
   if note not in wavs:
-    wavs[note] = pygame.mixer.Sound(mysynth.wav(30000, 440 * 2**((note-49)/12.)))
+    freq = 440 * 2**((note - 49)/12.)
+    omega = 2*pi*freq/44100.
+    buf = sin(arange(44100*1)*omega) * exp(-arange(44100*1)/(44100/3.))
+    buf = buffer((buf*.5*32767).astype(int16).tostring())
+    wavs[note] = pygame.mixer.Sound(buf)
   return wavs[note]
 
 major = [2,2,1,2,2,2,1]
@@ -74,7 +77,7 @@ val = range(13)+range(-1,-13,-1)
 aord = [ord(c) for c in ans]
 dic = dict(zip(aord,val))
 
-pygame.mixer.init(44100)
+pygame.mixer.init(44100,-16,2,4096)
 
 channel = pygame.mixer.Channel(0)
 #channel.set_endevent(pygame.USEREVENT)
@@ -110,7 +113,6 @@ def advance(good):
     #                            min(tone+5,60)+1)
     nexttone = -1
     while not (tone-9 <= nexttone <= tone+9):
-      print tone,nexttone
       nexttone = random.choice(notes)
     answer,tone = nexttone-tone,nexttone
   showplay()
